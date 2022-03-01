@@ -9,6 +9,7 @@
         round
         type="info"
         icon="search"
+        to="/search"
         >搜索</van-button
       >
     </van-nav-bar>
@@ -20,7 +21,8 @@
         :key="channel.id"
       >
         <!-- tab中对应的内容 -->
-        <ArticleList :channel="channel" />
+        <!-- 文章列表 -->
+        <article-list :channel="channel" />
       </van-tab>
 
       <div slot="nav-right" class="placeholder"></div>
@@ -52,6 +54,7 @@ import { getUserChannels } from '@/api/user'
 import { mapState } from 'vuex'
 import ArticleList from '../article/article-list'
 import ChannelEdit from '../channel/channel-edit'
+import { getItem } from '@/utils/storage'
 export default {
   name: 'HomeIndex',
   components: {
@@ -74,12 +77,29 @@ export default {
   methods: {
     async loadChannels() {
       try {
+        // const { data } = await getUserChannels()
+        // this.channels = data.data.channels
+        let channels = []
+
         if (this.user) {
+          // 已登录，请求获取用户频道列表
           const { data } = await getUserChannels()
-          // console.log(res)
-          this.channels = data.data.channels
+          channels = data.data.channels
+        } else {
+          // 未登录，判断是否有本地的频道列表数据
+          const localChannels = getItem('TOUTIAO_CHANNELS')
+          //    有，拿来使用
+          if (localChannels) {
+            channels = localChannels
+          } else {
+            //    没有，请求获取默认频道列表
+            const { data } = await getUserChannels()
+            channels = data.data.channels
+          }
         }
-      } catch (error) {
+
+        this.channels = channels
+      } catch (err) {
         this.$toast('获取频道数据失败')
       }
     },
